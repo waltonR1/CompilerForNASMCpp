@@ -1,0 +1,65 @@
+# ===============================
+# Build directories
+# ===============================
+build/
+cmake-build-debug/
+cmake-build-release/
+out/
+bin/
+
+# ===============================
+# CMake generated files
+# ===============================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# ===============================
+# Compiler / binary outputs
+# ===============================
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.dylib
+
+# ===============================
+# Flex & Bison generated files
+# (They should be regenerated, not committed)
+# ===============================
+lex.yy.c
+parser.cpp
+parser.hpp
+parser.output
+*.tab.c
+*.tab.h
+*.yy.cc
+
+# ===============================
+# Editor / IDE files
+# ===============================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# CLion / JetBrains
+.idea/
+*.iml
+
+# ===============================
+# MacOS system files
+# ===============================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ===============================
+# Logs / temporary files
+# ===============================
+*.log
+*.tmp
+*~
