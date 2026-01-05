@@ -272,9 +272,14 @@ void print_ir(const GeneratedIR& ir)
 extern int yyparse(void);
 extern std::shared_ptr<Node> g_ast_root; // The global AST root
 
-int main()
+int main(int argc, char** argv)
 {
-    while (true)
+    bool once = false;
+
+    if (argc > 1 && std::string(argv[1]) == "--once")
+        once = true;
+
+    do
     {
         std::ifstream fin("../read.txt");
         if (!fin) { std::cerr << "Cannot open read.txt\n"; return 1; }
@@ -319,7 +324,14 @@ int main()
             std::cerr << e.what() << "\n";
         }
         std::cout << "------------------------------\n";
-        std::string dummy;
-        std::getline(std::cin, dummy);
-    }
+
+        if (!once)
+        {
+            std::string dummy;
+            std::getline(std::cin, dummy);
+        }
+
+    } while (!once);
+
+    return 0;
 }
