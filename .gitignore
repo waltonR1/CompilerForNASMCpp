@@ -25,6 +25,7 @@ install_manifest.txt
 *.exe
 *.dll
 *.dylib
+*.asm
 
 # ===============================
 # Flex & Bison generated files
