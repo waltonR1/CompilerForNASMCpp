@@ -38,7 +38,7 @@ class TokenArray
 {
 public:
     void push(const Token &t) { tokens.push_back(t); }
-    const Token &current() const
+    [[nodiscard]] const Token &current() const
     {
         if (pos >= tokens.size())
             throw std::out_of_range("token pos");
@@ -49,7 +49,7 @@ public:
         if (pos + 1 < tokens.size())
             ++pos;
     }
-    bool empty() const { return tokens.empty(); }
+    [[nodiscard]] bool empty() const { return tokens.empty(); }
     void appendEndIfMissing()
     {
         if (tokens.empty() || tokens.back().type != TokenType::End)

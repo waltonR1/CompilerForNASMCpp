@@ -13,14 +13,14 @@ struct NumberNode : Node
 {
     Token tok;
     explicit NumberNode(Token t) : tok(std::move(t)) {}
-    std::string getValue() const { return tok.value; }
+    [[nodiscard]] std::string getValue() const { return tok.value; }
 };
 
 struct IdentifierNode : Node
 {
     Token tok;
     explicit IdentifierNode(Token t) : tok(std::move(t)) {}
-    std::string getValue() const { return tok.value; }
+    [[nodiscard]] std::string getValue() const { return tok.value; }
 };
 
 struct BinOpNode : Node
@@ -79,6 +79,6 @@ struct StringNode : Node
 {
     Token tok;
     explicit StringNode(Token t) : tok(std::move(t)) {}
-    std::string getValue() const { return tok.value; }
+    [[nodiscard]] std::string getValue() const { return tok.value; }
 };
 

@@ -24,7 +24,7 @@ void flatten_statement(
     }
 }
 
-void print_ast(const std::shared_ptr<Node>& node, std::string prefix = "", bool isLast = true)
+void print_ast(const std::shared_ptr<Node>& node, const std::string& prefix = "", bool isLast = true)
 {
     if (!node)
         return;
@@ -269,7 +269,7 @@ void print_ir(const GeneratedIR& ir)
     void yy_delete_buffer(YY_BUFFER_STATE b);
 
 // Provided by Bison (parser.yy)
-extern int yyparse(void);
+extern int yyparse();
 extern std::shared_ptr<Node> g_ast_root; // The global AST root
 
 int main(int argc, char** argv)

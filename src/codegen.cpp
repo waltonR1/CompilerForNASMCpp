@@ -1,6 +1,5 @@
 #include "codegen.hpp"
 #include <fstream>
-#include <cstdlib>
 
 static std::string op_to_asm(const std::string &op)
 {

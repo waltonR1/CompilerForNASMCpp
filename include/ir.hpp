@@ -23,7 +23,7 @@ enum class PrintKind {
 struct IRInstr
 {
     virtual ~IRInstr() = default;
-    virtual IRKind kind() const = 0;
+    [[nodiscard]] virtual IRKind kind() const = 0;
 };
 
 struct AssignmentCode : IRInstr
@@ -32,19 +32,19 @@ struct AssignmentCode : IRInstr
     std::string left;
     std::string op;    // empty if none
     std::string right; // may be empty
-    IRKind kind() const override { return IRKind::Assignment; }
+    [[nodiscard]] IRKind kind() const override { return IRKind::Assignment; }
 };
 
 struct JumpCode : IRInstr
 {
     std::string dist;
-    IRKind kind() const override { return IRKind::Jump; }
+    [[nodiscard]] IRKind kind() const override { return IRKind::Jump; }
 };
 
 struct LabelCode : IRInstr
 {
     std::string label;
-    IRKind kind() const override { return IRKind::Label; }
+    [[nodiscard]] IRKind kind() const override { return IRKind::Label; }
 };
 
 struct CompareCodeIR : IRInstr
@@ -53,7 +53,7 @@ struct CompareCodeIR : IRInstr
     std::string operation;
     std::string right;
     std::string jump;
-    IRKind kind() const override { return IRKind::Compare; }
+    [[nodiscard]] IRKind kind() const override { return IRKind::Compare; }
 };
 
 struct PrintCodeIR : IRInstr
@@ -61,7 +61,7 @@ struct PrintCodeIR : IRInstr
     PrintKind printKind;       // Int / String
     std::string value;
     bool newline;          // 是否换行
-    IRKind kind() const override { return IRKind::Print; }
+    [[nodiscard]] IRKind kind() const override { return IRKind::Print; }
 };
 
 struct InterCodeArray

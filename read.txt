@@ -7,7 +7,7 @@ msg = "Hello World!";
 string s = "Result: ";
 
 // ---- assignments ----
-a = 5;
+a = 4 + 1;
 b = 15;
 c = a + b;
 
@@ -46,6 +46,14 @@ if (c == 20) {
 
 if (c != 10) {
     prints("c is not 10");
+}
+
+// ---- dead code demo ----
+int dead;
+dead = a + b;     // dead: never used
+
+if (0 == 1) {
+    print(999);   // dead branch
 }
 
 // ---- end ----

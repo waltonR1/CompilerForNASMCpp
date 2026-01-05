@@ -11,7 +11,6 @@ public:
                   const std::unordered_map<std::string, std::string> &constants,
                   const std::unordered_map<std::string, std::string> &tempmap);
     void writeAsm(const std::string &path);
-    int assembleAndRun(const std::string &asmPath, const std::string &objPath, const std::string &exePath);
 
 private:
     void pr(const std::string &s);
@@ -27,7 +26,6 @@ private:
     void gen_print_newline();
     void gen_print_num_function();
     void gen_print_string_function();
-    void gen_support_functions();
     static std::string handleVar(const std::string &a, const std::unordered_map<std::string, std::string> &tempmap);
 
 private:
