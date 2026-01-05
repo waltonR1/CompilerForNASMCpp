@@ -1,13 +1,51 @@
+// ---- declarations ----
 int a, b;
+int c = 0;
+string msg;
+msg = "Hello World!";
+
+string s = "Result: ";
+
+// ---- assignments ----
 a = 5;
 b = 15;
-int c = a + b;
-string msg = "hello world";
+c = a + b;
+
+// ---- if / else ----
 if (a >= 10) {
-    print (a);
+    print(a);
 } else {
     a = a + 1;
+    print(a);
 }
+
+// ---- while loop ----
 while (b < 20) {
     b = b + 1;
 }
+
+// ---- nested block ----
+{
+    int x;
+    x = c * 2;
+    print(x);
+}
+
+// ---- printing ----
+prints("Computation finished");
+print(s + c);
+print(msg);
+
+// ---- string literal as expr ----
+print("Value of c = " + c);
+
+// ---- comparison variants ----
+if (c == 20) {
+    prints("c equals 20");
+}
+
+if (c != 10) {
+    prints("c is not 10");
+}
+
+// ---- end ----

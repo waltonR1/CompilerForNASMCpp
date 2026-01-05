@@ -5,6 +5,24 @@
 #include "tokens.hpp"
 #include "ast.hpp"
 #include "ir.hpp"
+#include "codegen.hpp"
+
+void flatten_statement(
+    const std::shared_ptr<Node>& node,
+    std::vector<std::shared_ptr<Node>>& out)
+{
+    if (!node) return;
+
+    if (auto st = std::dynamic_pointer_cast<Statement>(node))
+    {
+        flatten_statement(st->left, out);
+        flatten_statement(st->right, out);
+    }
+    else
+    {
+        out.push_back(node);
+    }
+}
 
 void print_ast(const std::shared_ptr<Node>& node, std::string prefix = "", bool isLast = true)
 {
@@ -106,24 +124,37 @@ void print_ast(const std::shared_ptr<Node>& node, std::string prefix = "", bool 
     {
         std::cout << "IfStatement\n";
 
-        // condition
+        // Condition
         print_ast(n->if_condition,
-                  prefix + (isLast ? "    " : "│   "), false);
+                  prefix + (isLast ? "    " : "│   "),
+                  false);
 
-        // if body
-        std::cout << prefix + (isLast ? "    " : "│   ") << "├── IfBody\n";
+        // 判断 Then 是否是最后一个
+        bool thenIsLast = (n->else_body == nullptr);
+
+        // Then
+        std::cout << prefix + (isLast ? "    " : "│   ")
+                  << (thenIsLast ? "└── Then\n" : "├── Then\n");
+
         print_ast(n->if_body,
-                  prefix + (isLast ? "    " : "│   ") + "│   ", true);
+                  prefix + (isLast ? "    " : "│   ")
+                         + (thenIsLast ? "    " : "│   "),
+                  true);
 
-        // else
+        // Else (only if exists)
         if (n->else_body)
         {
-            std::cout << prefix + (isLast ? "    " : "│   ") << "└── ElseBody\n";
+            std::cout << prefix + (isLast ? "    " : "│   ")
+                      << "└── Else\n";
+
             print_ast(n->else_body,
-                      prefix + (isLast ? "    " : "│   ") + "    ", true);
+                      prefix + (isLast ? "    " : "│   ") + "    ",
+                      true);
         }
+
         return;
     }
+
 
     // ---- While ----
     if (auto n = std::dynamic_pointer_cast<WhileStatement>(node))
@@ -138,12 +169,19 @@ void print_ast(const std::shared_ptr<Node>& node, std::string prefix = "", bool 
     // ---- Statement list ----
     if (auto n = std::dynamic_pointer_cast<Statement>(node))
     {
-        std::cout << "Statement\n";
+        std::cout << "Block\n";
 
-        print_ast(n->left,  prefix + (isLast ? "    " : "│   "), false);
-        print_ast(n->right, prefix + (isLast ? "    " : "│   "), true);
+        std::vector<std::shared_ptr<Node>> stmts;
+        flatten_statement(node, stmts);
+
+        for (size_t i = 0; i < stmts.size(); ++i)
+        {
+            bool last = (i + 1 == stmts.size());
+            print_ast(stmts[i], prefix + "    ", last);
+        }
         return;
     }
+
 
     std::cout << "UnknownNode\n";
 }
@@ -195,9 +233,23 @@ void print_ir(const GeneratedIR& ir)
             case IRKind::Print:
             {
                 auto *p = dynamic_cast<PrintCodeIR*>(instr.get());
-                std::cout << "PRINT " << p->type << " " << p->value << "\n";
+
+                std::cout << "PRINT ";
+
+                if (p->printKind == PrintKind::String)
+                    std::cout << "string ";
+                else
+                    std::cout << "int ";
+
+                std::cout << p->value;
+
+                if (p->newline)
+                    std::cout << " \\n";
+
+                std::cout << "\n";
                 break;
             }
+
         }
     }
 
@@ -245,6 +297,17 @@ int main()
                 IntermediateCodeGen irgen(root);
                 auto gen = irgen.get();
                 print_ir(gen);
+
+                // ===== 新增：生成 asm =====
+                CodeGenerator codegen(
+                    gen.code,
+                    gen.identifiers,
+                    gen.constants,
+                    {}               // tempmap，你现在 IR 已经是最终名，可以先传空
+                );
+
+                codegen.writeAsm("../output.asm");
+                std::cout << "[OK] output.asm generated.\n";
             }
             else
             {

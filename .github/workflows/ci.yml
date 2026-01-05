@@ -1,0 +1,58 @@
+name: CI - Build and Verify
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - '.github/workflows/**'
+      - 'CMakeLists.txt'
+      - 'read.txt'
+      - 'expected.txt'
+  workflow_dispatch:
+
+jobs:
+  ubuntu-ci:
+    name: Linux (Ubuntu / GCC)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build g++ cmake flex bison nasm
+
+      - name: Configure and Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake -G Ninja ..
+          ninja
+
+      - name: Run compiler (generate asm)
+        run: |
+          cd build
+          ./compiler --once
+          echo "Compiler executed, output.asm generated"
+
+      - name: Assemble, Link and Run Generated Program
+        run: |
+          nasm -f elf64 output.asm -o output.o
+          ld output.o -o program
+          ./program > output.txt
+
+      - name: Compare Output with expected.txt
+        run: |
+          sed -E 's/[[:space:]]+$//' expected.txt | sed '/^$/d' > expected_trimmed.txt
+          sed -E 's/[[:space:]]+$//' output.txt   | sed '/^$/d' > output_trimmed.txt
+
+          echo "=== Program Output ==="
+          cat output_trimmed.txt
+          echo "=== Expected Output ==="
+          cat expected_trimmed.txt
+
+          diff -u expected_trimmed.txt output_trimmed.txt

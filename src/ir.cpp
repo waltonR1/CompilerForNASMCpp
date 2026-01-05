@@ -1,5 +1,44 @@
 #include "ir.hpp"
 
+// -------------------- type helpers (minimal) --------------------
+static bool is_int_literal(const std::string& s) {
+    if (s.empty()) return false;
+    size_t i = 0;
+    if (s[0] == '-') { if (s.size() == 1) return false; i = 1; }
+    for (; i < s.size(); ++i) if (s[i] < '0' || s[i] > '9') return false;
+    return true;
+}
+
+static bool isStringValue(const std::string& v,
+                          const std::unordered_map<std::string, std::string>& identifiers,
+                          const std::unordered_map<std::string, std::string>& constants) {
+    // string literal symbol: S1/S2... in constants
+    if (constants.find(v) != constants.end()) return true;
+
+    // identifier declared as string (e.g., Vmsg : string)
+    auto it = identifiers.find(v);
+    if (it != identifiers.end() && it->second == "string") return true;
+
+    return false;
+}
+
+static bool isIntValue(const std::string& v,
+                       const std::unordered_map<std::string, std::string>& identifiers,
+                       const std::unordered_map<std::string, std::string>& constants) {
+    // numeric literal
+    if (is_int_literal(v)) return true;
+
+    // declared int temp/var
+    auto it = identifiers.find(v);
+    if (it != identifiers.end() && it->second == "int") return true;
+
+    // if it is a constant symbol, it's a string constant in your design => not int
+    if (constants.find(v) != constants.end()) return false;
+
+    // unknown => treat as int by default (keeps runtime permissive)
+    return true;
+}
+
 static std::shared_ptr<AssignmentCode> make_assign(const std::string &v, const std::string &l, const std::string &op, const std::string &r)
 {
     auto a = std::make_shared<AssignmentCode>();
@@ -30,11 +69,12 @@ static std::shared_ptr<CompareCodeIR> make_compare(const std::string &l, const s
     c->jump = j;
     return c;
 }
-static std::shared_ptr<PrintCodeIR> make_print(const std::string &t, const std::string &v)
+static std::shared_ptr<PrintCodeIR> make_print(PrintKind k, const std::string& v, bool nl)
 {
     auto p = std::make_shared<PrintCodeIR>();
-    p->type = t;
+    p->printKind = k;
     p->value = v;
+    p->newline = nl;
     return p;
 }
 
@@ -106,22 +146,28 @@ void IntermediateCodeGen::exec_condition(const std::shared_ptr<Condition> &c)
 
 void IntermediateCodeGen::exec_if(const std::shared_ptr<IfStatement> &i)
 {
-    // 语义：如果条件为假，跳到 L_else（或 L_end）
     if (i->else_body)
     {
+        auto L_then = nextLabel();
         auto L_else = nextLabel();
         auto L_end  = nextLabel();
 
         auto left  = exec_expr(i->if_condition->left_expression);
         auto right = exec_expr(i->if_condition->right_expression);
+
+        // 条件成立 -> 进入 then
         arr.append(make_compare(left,
                                 i->if_condition->comparison.value,
                                 right,
-                                L_else));   // 条件不成立 -> 跳到 else
+                                L_then));
+
+        // 条件不成立 -> 直接跳 else
+        arr.append(make_jump(L_else));
 
         // then 部分
+        arr.append(make_label(L_then));
         exec_statement(i->if_body);
-        arr.append(make_jump(L_end));        // 执行完 then 跳到 if 之后
+        arr.append(make_jump(L_end));
 
         // else 部分
         arr.append(make_label(L_else));
@@ -132,49 +178,101 @@ void IntermediateCodeGen::exec_if(const std::shared_ptr<IfStatement> &i)
     }
     else
     {
-        auto L_end = nextLabel();
+        auto L_then = nextLabel();
+        auto L_end  = nextLabel();
 
         auto left  = exec_expr(i->if_condition->left_expression);
         auto right = exec_expr(i->if_condition->right_expression);
+
         arr.append(make_compare(left,
                                 i->if_condition->comparison.value,
                                 right,
-                                L_end));   // 条件假 -> 跳过 then
+                                L_then));
 
+        arr.append(make_jump(L_end));
+
+        arr.append(make_label(L_then));
         exec_statement(i->if_body);
+
         arr.append(make_label(L_end));
     }
 }
 
+
 void IntermediateCodeGen::exec_while(const std::shared_ptr<WhileStatement> &w)
 {
     auto L_start = nextLabel();
+    auto L_body  = nextLabel();
     auto L_end   = nextLabel();
 
     arr.append(make_label(L_start));
 
     auto left  = exec_expr(w->condition->left_expression);
     auto right = exec_expr(w->condition->right_expression);
-    arr.append(make_compare(left, w->condition->comparison.value, right, L_end));  // 条件假 -> 跳到 L_end
+
+    // 条件成立 -> 进入循环体
+    arr.append(make_compare(left,
+                            w->condition->comparison.value,
+                            right,
+                            L_body));
+
+    // 条件不成立 -> 跳出循环
+    arr.append(make_jump(L_end));
+
+    arr.append(make_label(L_body));
     exec_statement(w->body);
     arr.append(make_jump(L_start));
+
     arr.append(make_label(L_end));
 }
 
+
 void IntermediateCodeGen::exec_print(const std::shared_ptr<PrintStatement> &p)
 {
-    if (p->type == "string")
-    {
+    // prints("...") —— 直接输出字符串字面量并换行
+    if (p->type == "string") {
         auto sym = nextStringSym();
         constants[sym] = p->strValue;
-        arr.append(make_print("string", sym));
+        arr.append(make_print(PrintKind::String, sym, true));
+        return;
     }
-    else
-    {
-        auto val = exec_expr(p->intExpr);
-        arr.append(make_print("int", val));
+
+    // print(expr)
+    auto expr = p->intExpr;
+
+    if (auto bin = std::dynamic_pointer_cast<BinOpNode>(expr)) {
+        auto left  = exec_expr(bin->left);
+        auto right = exec_expr(bin->right);
+
+        // string + int
+        if (isStringValue(left, identifiers, constants) &&
+            isIntValue(right, identifiers, constants)) {
+            arr.append(make_print(PrintKind::String, left, false));
+            arr.append(make_print(PrintKind::Int, right, true));
+            return;
+            }
+
+        // int + string
+        if (isIntValue(left, identifiers, constants) &&
+            isStringValue(right, identifiers, constants)) {
+            arr.append(make_print(PrintKind::Int, left, true));
+            arr.append(make_print(PrintKind::String, right, true));
+            return;
+            }
+
     }
+
+    // fallback：普通 int
+    auto v = exec_expr(expr);
+
+    if (identifiers[v] == "string") {
+        arr.append(make_print(PrintKind::String, v, true));
+        return;
+    }
+
+    arr.append(make_print(PrintKind::Int, v, true));
 }
+
 
 void IntermediateCodeGen::exec_declaration(const std::shared_ptr<Declaration> &d)
 {

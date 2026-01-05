@@ -42,7 +42,9 @@ NL         [\n]
 
 %%
 
-"#"[^\n]* ; /* Comment */
+"//".*                          ;   /* C++ single-line comment */
+"#".*                           ;   /* shell-style comment */
+"/*"([^*]|\*+[^*/])*\*+"/"      ;   /* C-style block comment */
 
 
 \"([^\"\\]|\\.)*\"       {

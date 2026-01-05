@@ -24,6 +24,7 @@ private:
     void gen_label(const LabelCode &l);
     void gen_compare(const CompareCodeIR &c);
     void gen_print(const PrintCodeIR &p);
+    void gen_print_newline();
     void gen_print_num_function();
     void gen_print_string_function();
     void gen_support_functions();

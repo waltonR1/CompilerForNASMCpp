@@ -14,6 +14,12 @@ enum class IRKind
     Print
 };
 
+enum class PrintKind {
+    Int,
+    String
+};
+
+
 struct IRInstr
 {
     virtual ~IRInstr() = default;
@@ -52,8 +58,9 @@ struct CompareCodeIR : IRInstr
 
 struct PrintCodeIR : IRInstr
 {
-    std::string type; // "string" or "int"
+    PrintKind printKind;       // Int / String
     std::string value;
+    bool newline;          // 是否换行
     IRKind kind() const override { return IRKind::Print; }
 };
 
