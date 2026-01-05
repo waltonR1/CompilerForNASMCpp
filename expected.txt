@@ -1,0 +1,8 @@
+6
+40
+Computation finished
+Result: 20
+Hello World!
+Value of c = 20
+c equals 20
+c is not 10
