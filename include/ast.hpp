@@ -4,81 +4,77 @@
 #include <vector>
 #include "tokens.hpp"
 
-struct Node
-{
+struct Node {
     virtual ~Node() = default;
 };
 
-struct NumberNode : Node
-{
+struct NumberNode final : Node {
     Token tok;
-    explicit NumberNode(Token t) : tok(std::move(t)) {}
+
+    explicit NumberNode(Token t) : tok(std::move(t)) {
+    }
+
     [[nodiscard]] std::string getValue() const { return tok.value; }
 };
 
-struct IdentifierNode : Node
-{
+struct IdentifierNode final : Node {
     Token tok;
-    explicit IdentifierNode(Token t) : tok(std::move(t)) {}
+
+    explicit IdentifierNode(Token t) : tok(std::move(t)) {
+    }
+
     [[nodiscard]] std::string getValue() const { return tok.value; }
 };
 
-struct BinOpNode : Node
-{
+struct BinOpNode final : Node {
     std::shared_ptr<Node> left;
     Token op_tok;
     std::shared_ptr<Node> right;
 };
 
-struct Statement : Node
-{
+struct Statement final : Node {
     std::shared_ptr<Node> left;
     std::shared_ptr<Node> right; // may be null
 };
 
-struct Condition : Node
-{
+struct Condition final : Node {
     std::shared_ptr<Node> left_expression;
     Token comparison;
     std::shared_ptr<Node> right_expression;
 };
 
-struct IfStatement : Node
-{
+struct IfStatement final : Node {
     std::shared_ptr<Condition> if_condition;
     std::shared_ptr<Node> if_body;
     std::shared_ptr<Node> else_body; // may be null
 };
 
-struct WhileStatement : Node
-{
+struct WhileStatement final : Node {
     std::shared_ptr<Condition> condition;
     std::shared_ptr<Node> body;
 };
 
-struct PrintStatement : Node
-{
-    std::string type;              // "string" or "int"
+struct PrintStatement final : Node {
+    std::string type; // "string" or "int"
     std::shared_ptr<Node> intExpr; // used if type=="int"
-    std::string strValue;          // used if type=="string"
+    std::string strValue; // used if type=="string"
 };
 
-struct Assignment : Node
-{
+struct Assignment final : Node {
     Token identifier;
     std::shared_ptr<Node> expression;
 };
 
-struct Declaration : Node
-{
-    Token declaration_type;         // token of type Int or StringKw
+struct Declaration final : Node {
+    Token declaration_type; // token of type Int or StringKw
     std::vector<Token> identifiers; // VAR tokens
 };
 
-struct StringNode : Node
-{
+struct StringNode final : Node {
     Token tok;
-    explicit StringNode(Token t) : tok(std::move(t)) {}
+
+    explicit StringNode(Token t) : tok(std::move(t)) {
+    }
+
     [[nodiscard]] std::string getValue() const { return tok.value; }
 };
-

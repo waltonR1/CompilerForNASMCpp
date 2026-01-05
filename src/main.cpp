@@ -264,13 +264,38 @@ void print_ir(const GeneratedIR& ir)
 
 
 // If Flex's buffer type isn't visible, declare it.
-    typedef struct yy_buffer_state *YY_BUFFER_STATE;
-    YY_BUFFER_STATE yy_scan_string(const char* str);
-    void yy_delete_buffer(YY_BUFFER_STATE b);
+struct yy_buffer_state;
+
+using YYBufferState = yy_buffer_state *;
+
+YYBufferState yy_scan_string(const char *str);
+void yy_delete_buffer(YYBufferState b);
 
 // Provided by Bison (parser.yy)
 extern int yyparse();
 extern std::shared_ptr<Node> g_ast_root; // The global AST root
+
+class FlexBuffer {
+public:
+    explicit FlexBuffer(const std::string &input)
+            : buf_(yy_scan_string(input.c_str())) {}
+
+    FlexBuffer(const FlexBuffer &) = delete;
+
+    FlexBuffer &operator=(const FlexBuffer &) = delete;
+
+    FlexBuffer(FlexBuffer &&other) noexcept: buf_(other.buf_) {
+        other.buf_ = nullptr;
+    }
+
+    ~FlexBuffer() {
+        if (buf_)
+            yy_delete_buffer(buf_);
+    }
+
+private:
+    YYBufferState buf_;
+};
 
 int main(int argc, char** argv)
 {
@@ -290,13 +315,12 @@ int main(int argc, char** argv)
 
         try
         {
-            YY_BUFFER_STATE buf = yy_scan_string(input.c_str());
-            int parse_result = yyparse();
-            yy_delete_buffer(buf);
+            FlexBuffer f_buffer(input);
 
-            if (parse_result == 0)
+            if (int parse_result = yyparse(); parse_result == 0)
             {
                 std::cout << "Parsing successful!\n";
+                std::cout << "[Root]\n";
                 print_ast(g_ast_root);
                 auto root = g_ast_root;
                 IntermediateCodeGen irgen(root);
